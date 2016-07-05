@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var path = require('path');
 
 var app = express();
 module.exports = app;
@@ -26,7 +27,7 @@ app.get('/repos', function (req, res) {
 
 
 app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/client/index.html')
+  res.sendFile(path.resolve(__dirname + '/../client/index.html'))
 });
 
 var port = process.env.PORT || 4040;
