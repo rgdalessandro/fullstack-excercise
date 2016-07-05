@@ -7,7 +7,7 @@
 <h2>GitHub Fetcher</h2>
 <form class="repo-fetcher">
   <h3>Enter a GitHub username to fetch:</h3>
-  <input type="text" name="username" />
+  <input type="text" name="username" id="username"/>
 
   <button type="submit">Fetch User's Repos</button>
 </form>
@@ -23,7 +23,19 @@
 //  fetch from GitHub's API,
 //  and send result to POST /repos/import
 //
-// $('.repo-fetcher')...
+$('.repo-fetcher').on('submit', function(e){
+  e.preventDefault();
+  console.log('button clicked');
+  var user = $('#username').val();
+  var repos;
+  $.getJSON(`https://api.github.com/users/${user}/repos`)
+  .then(function(json){
+    $('#username').val('');
+    repos = json;                 
+    console.log('user:', user, 'repos:', repos);
+  })
+  //.then();
+})
 
 </script>
 </body>
