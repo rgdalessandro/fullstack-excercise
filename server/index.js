@@ -17,7 +17,29 @@ var knex = require('knex')({
 
 
 app.post('/repos/import', function (req, res) {
-  // TODO
+  console.log('req.url:', req.url);
+  var repos = req.body.repositories;
+  knex.select('id').table('repos')
+  .then(function(rows){
+    var existingRepos = rows;
+    if (existingRepos.length > 0) existingRepos = existingRepos.map(row => row.id);
+    console.log('existingRepos:', existingRepos);
+    for (repo of repos) {
+      var id = repo.id;
+      var repo_name = repo.name;
+      var owner_name = repo.owner.login;
+      var stargazers = repo.stargazers_count;
+      if (existingRepos.indexOf(id) < 0) {
+        console.log("adding new repos!");
+        knex('repos').insert({id: id, repo_name: repo_name, owner_name: owner_name, stargazers: stargazers})
+        .then(function(resp){console.log(resp)});
+      } else {
+        console.log("updating old repos");
+        knex('repos').where({id: id}).update({repo_name: repo_name, owner_name: owner_name, stargazers: stargazers})
+        .then(function(resp){console.log(resp)});
+      }
+    }
+  });
 });
 
 

@@ -2,8 +2,9 @@
 exports.up = function(knex, Promise) {
   return Promise.all([
     knex.schema.createTable('repos', function(table){
-      table.string('repo-name');
-      table.string('owner-name');
+      table.integer('id').primary();
+      table.string('repo_name');
+      table.string('owner_name');
       table.integer('stargazers');
     })
   ])
