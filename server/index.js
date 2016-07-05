@@ -17,6 +17,7 @@ var knex = require('knex')({
 
 
 app.post('/repos/import', function (req, res) {
+  res.sendStatus(202);
   console.log('req.url:', req.url);
   var repos = req.body.repositories;
   knex.select('id').table('repos')
@@ -44,7 +45,11 @@ app.post('/repos/import', function (req, res) {
 
 
 app.get('/repos', function (req, res) {
-  // TODO
+  knex('repos').orderBy('stargazers', 'desc').limit(25)
+  .then(function(rows){
+    console.log('rows', rows);
+    res.json({repos: rows});
+  });
 });
 
 
