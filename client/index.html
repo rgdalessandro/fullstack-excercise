@@ -32,11 +32,16 @@
   /* Cells in odd rows (1,3,5...) are another (excludes header cells)  */ 
   tr:nth-child(odd) td { background: #FEFEFE; }  
 
-  tr td:hover { background: #666; color: #FFF; } /* Hover cell effect! */
+  /*tr td:hover { background: #666; color: #FFF; }*/ /* Hover cell effect! */
 
   a:link, a:visited, a:hover, a:active {
     color: blue;
     text-decoration: none;
+  }
+
+  .response {
+    float: right;
+    display: none;
   }
   </style>
 </head>
@@ -44,6 +49,7 @@
 
 <h2>GitHub Fetcher</h2>
 <form class="repo-fetcher">
+  <div class="response"><span class="created"></span> new repos imported, <span class="updated"></span> repos updated</div>
   <h3>Enter a GitHub username to fetch:</h3>
   <input type="text" name="username" id="username"/>
 
@@ -74,17 +80,22 @@ $('.repo-fetcher').on('submit', function(e){
         stargazers: repo.stargazers_count
       }
     });
-    console.log('user:', user, 'repos:', repos);
     $.ajax({
       type: "POST",
       url: '/repos/import',
       contentType: 'application/json',
       dataType: 'json',
       data: JSON.stringify({repositories: repos})
+    }).then(function(counts){
+      $('.response').hide();
+      $('.created').html(counts.created);
+      $('.updated').html(counts.updated);
+      $('.response').fadeIn();
+      saveContributors(repos);
     });
   })
-  .done(function(resp){
-    setTimeout(getTopRepos, 50);
+  .done(function(arg1, arg2, arg3){
+    setTimeout(getTopRepos, 300);
   });
 });
 
@@ -95,9 +106,7 @@ $(document).ready(function(){
 function getTopRepos() {
   $.getJSON('/repos')
   .done(function(json){
-    console.log('json', json);
     let topRepos = json.repos;                 
-    console.log('topRepos:', topRepos);
     $('.top-repos').empty();
     if (topRepos.length > 0) {
       $('.top-repos').append(
@@ -118,6 +127,47 @@ function getTopRepos() {
       );
     }
   });
+}
+
+function saveContributors(repos) {
+  for (repo of repos) {
+    let contributions = {repo_id: repo.id, contributor_ids: []};
+    $.ajax({
+      type: "GET",
+      url: `https://api.github.com/repos/${repo.owner_name}/${repo.repo_name}/contributors`,
+      contentType: 'application/json',
+      dataType: 'json',
+      beforeSend: function(xhr) {
+          xhr.setRequestHeader( 'Authorization', 'token 91752a68ebda11f1b44fd8010d9deb2be4ec3e83')
+      }
+    })
+    .then(function(resp){
+      let contributors = resp.map(function(contributor) {
+        contributions.contributor_ids.push(contributor.id);
+        return {
+          id: contributor.id,
+          contributor_name: contributor.login,
+        }
+      });
+      $.ajax({
+        type: "POST",
+        url: '/contributors/import',
+        contentType: 'application/json',
+        dataType: 'json',
+        data: JSON.stringify({contributors: contributors})
+      });
+      return;
+    })
+    .then(function(){
+      $.ajax({
+        type: "POST",
+        url: '/contributions/import',
+        contentType: 'application/json',
+        dataType: 'json',
+        data: JSON.stringify(contributions)
+      });  
+    });
+  }
 }
 
 </script>
