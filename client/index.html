@@ -60,35 +60,54 @@ $('.repo-fetcher').on('submit', function(e){
   var user = $('#username').val();
   var repos;
   $.getJSON(`https://api.github.com/users/${user}/repos`)
-  .then(function(json){
+  .done(function(json){
     $('#username').val('');
-    repos = json;                 
-    console.log('user:', user, 'repos:', repos);
+    repos = json;
     return repos;
   })
-  .then(function(repos){
+  .done(function(repos){
+    repos = repos.map(function(repo) {
+      return {
+        id: repo.id,
+        repo_name: repo.name,
+        owner_name: repo.owner.login,
+        stargazers: repo.stargazers_count
+      }
+    });
+    console.log('user:', user, 'repos:', repos);
     $.ajax({
       type: "POST",
       url: '/repos/import',
       contentType: 'application/json',
       dataType: 'json',
       data: JSON.stringify({repositories: repos})
-    })
+    });
+  })
+  .done(function(resp){
+    setTimeout(getTopRepos, 50);
   });
 });
 
 $(document).ready(function(){
+  getTopRepos();
+});
+
+function getTopRepos() {
   $.getJSON('/repos')
-  .then(function(json){
+  .done(function(json){
+    console.log('json', json);
     let topRepos = json.repos;                 
     console.log('topRepos:', topRepos);
-    $('.top-repos').append(
-      `<tr>
-        <th>Repo Name</th>
-        <th>Owner</th> 
-        <th>Stargazers</th>
-      </tr>`
-    );
+    $('.top-repos').empty();
+    if (topRepos.length > 0) {
+      $('.top-repos').append(
+        `<tr>
+          <th>Repo Name</th>
+          <th>Owner</th> 
+          <th>Stargazers</th>
+        </tr>`
+      );
+    }
     for (repo of topRepos) {
       $('.top-repos').append(
         `<tr data-id=${repo.id}>
@@ -98,8 +117,8 @@ $(document).ready(function(){
         </tr>`
       );
     }
-  })
-});
+  });
+}
 
 </script>
 </body>
